@@ -44,7 +44,7 @@ function App() {
           <Route path="settings" element={<div className="text-center py-20 text-text-secondary">System Settings Coming Soon</div>} />
         </Route>
 
-        {/* User Routes */}
+        {/* User Routes 1*/}
         <Route element={<ClientLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
