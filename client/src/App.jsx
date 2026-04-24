@@ -8,7 +8,7 @@ import QA from './pages/QA';
 import Skills from './pages/Skills';
 import CreateSkill from './pages/CreateSkill';
 import SkillDetails from './pages/SkillDetails';
-import StudyGroups from './pages/StudyGroups';
+import StudyGroups from './pages/StudyGroups/StudyGroups';
 import Clubs from './pages/Clubs';
 import Sports from './pages/Sports';
 import AdminDashboard from './pages/AdminDashboard';
