@@ -1,4 +1,4 @@
-// models/WorkshopRequest.js
+// models/Workshops/WorkshopRequest.js
 const mongoose = require('mongoose');
 
 const workshopRequestSchema = new mongoose.Schema({
@@ -6,7 +6,7 @@ const workshopRequestSchema = new mongoose.Schema({
   description: { type: String, required: true },
   category: { type: String, enum: ['Technical', 'Soft Skills', 'Career Development', 'Research', 'Other'], default: 'Technical' },
   faculty: { type: String, enum: ['Computing', 'Engineering', 'Humanities and Sciences', 'Business', 'Architecture', 'Other'], required: true },
-  academicYear: { type: String, enum: ['Year 1', 'Year 2', 'Year 3', 'Year 4'], required: true },
+  academicYear: { type: String, enum: ['Year 1 Sem 1', 'Year 1 Sem 2', 'Year 2 Sem 1', 'Year 2 Sem 2', 'Year 3 Sem 1', 'Year 3 Sem 2', 'Year 4 Sem 1', 'Year 4 Sem 2'], required: true },
   requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   requestedByName: String,
   requestedByEmail: String,
@@ -20,9 +20,5 @@ const workshopRequestSchema = new mongoose.Schema({
   votes: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, votedAt: { type: Date, default: Date.now } }],
   voteCount: { type: Number, default: 0 }
 }, { timestamps: true });
-
-workshopRequestSchema.index({ status: 1, faculty: 1, academicYear: 1 });
-workshopRequestSchema.index({ requestedBy: 1 });
-workshopRequestSchema.index({ assignedTo: 1 });
 
 module.exports = mongoose.model('WorkshopRequest', workshopRequestSchema);

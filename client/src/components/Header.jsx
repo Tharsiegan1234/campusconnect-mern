@@ -2,7 +2,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import NotificationsDropdown from './NotificationsDropdown';
-
+import logo from '../assets/images/Avatars/logo.png';
 const Header = () => {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user'));
@@ -33,8 +33,11 @@ const Header = () => {
         <header className="bg-primary text-white shadow-md sticky top-0 z-50 font-heading">
             <div className="container mx-auto px-6 py-4 flex justify-between items-center">
                 <Link to="/" className="text-2xl font-bold tracking-wide hover:text-accent transition-colors">
-                    CampusConnect
+                    {/* CampusConnect */}
+                     <img src={logo} alt="CampusConnect Logo" className="h-11 object-cover" />
+
                 </Link>
+               
 
                 <nav className="hidden md:flex space-x-8 text-sm font-medium">
                     <Link to="/" className="hover:text-accent transition-colors">Home</Link>

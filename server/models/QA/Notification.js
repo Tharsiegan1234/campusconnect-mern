@@ -13,13 +13,13 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['new_question', 'new_answer'],
+        enum: ['new_question', 'new_answer', 'ban', 'unban'],
         required: true
     },
     question: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Question',
-        required: true
+        required: false
     },
     answer: {
         type: mongoose.Schema.Types.ObjectId,

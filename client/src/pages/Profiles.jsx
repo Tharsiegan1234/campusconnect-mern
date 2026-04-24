@@ -78,7 +78,13 @@ const Profiles = () => {
     };
 
     const handleInputChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        if (name === 'name') {
+            const lettersOnly = value.replace(/[^a-zA-Z\s]/g, '');
+            setFormData({ ...formData, [name]: lettersOnly });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleProfessionalInfoChange = (index, e) => {
@@ -181,9 +187,9 @@ const Profiles = () => {
                             <h1 className="text-3xl font-bold text-text-main font-heading">{user.name}</h1>
                             <p className="text-text-secondary font-medium">{user.email}</p>
                             <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-3">
-                                <span className={`px-4 py-1 text-xs font-black rounded-full uppercase tracking-widest shadow-sm ${user.role === 'admin' ? 'bg-accent text-primary' : 'bg-blue-50 text-primary'
+                                <span className={`whitespace-nowrap px-4 py-1 text-xs font-black rounded-full uppercase tracking-widest shadow-sm ${user.role === 'admin' ? 'bg-accent text-primary' : (user.isBatchRep ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-primary')
                                     }`}>
-                                    {user.role}
+                                    {user.isBatchRep ? 'Batch Rep' : user.role}
                                 </span>
                                 {user.role !== 'admin' && user.field && (
                                     <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full uppercase tracking-wider">
@@ -482,21 +488,24 @@ const Profiles = () => {
                                             <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">
                                                 {user.role === 'admin' ? 'System Overview' : 'Platform Stats'}
                                             </h3>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-                                                    <div className="text-xl font-bold text-text-main">
-                                                        {user.role === 'admin' ? 'ALL' : (qaData.stats.totalPosts || 0)}
+                                            <div className={`grid gap-4 ${user.role === 'expert' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                                                {user.role !== 'expert' && (
+                                                    <div className="bg-white rounded-xl p-4 shadow-sm text-center">
+                                                        <div className="text-xl font-bold text-text-main">
+                                                            {user.role === 'admin' ? 'ALL' : (qaData.stats.totalPosts || 0)}
+                                                        </div>
+                                                        <div className="text-xs text-text-secondary uppercase font-bold tracking-tighter">
+                                                            {user.role === 'admin' ? 'Access' : 'Posts'}
+                                                        </div>
                                                     </div>
-                                                    <div className="text-xs text-text-secondary uppercase font-bold tracking-tighter">
-                                                        {user.role === 'admin' ? 'Access' : 'Posts'}
-                                                    </div>
-                                                </div>
+                                                )}
                                                 <div className="bg-white rounded-xl p-4 shadow-sm text-center">
                                                     <div className="text-xl font-bold text-text-main uppercase">
-                                                        {user.role === 'admin' ? 'Live' : (qaData.stats.totalAnswers || 0)}
+                                                        {user.role === 'admin' ? 'Live' :
+                                                            (user.role === 'student' ? (qaData.stats.solvedQuestions || 0) : (qaData.stats.totalAnswers || 0))}
                                                     </div>
                                                     <div className="text-xs text-text-secondary uppercase font-bold tracking-tighter">
-                                                        {user.role === 'admin' ? 'Service' : 'Contribs'}
+                                                        {user.role === 'admin' ? 'Service' : (user.role === 'expert' ? 'Contribute' : 'Solved Questions')}
                                                     </div>
                                                 </div>
                                                 {user.role === 'expert' && (
@@ -514,7 +523,7 @@ const Profiles = () => {
                                                                 {qaData.stats.helpfulLikes || 0}
                                                             </div>
                                                             <div className="text-xs text-text-secondary uppercase font-bold tracking-tighter">
-                                                                Likes
+                                                                Liked
                                                             </div>
                                                         </div>
                                                     </>
@@ -599,7 +608,7 @@ const Profiles = () => {
                             className="bg-white rounded-[2.5rem] w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl"
                             onClick={e => e.stopPropagation()}
                         >
-                            <div className="p-8 h-full flex flex-col">
+                            <div className="p-8 max-h-[90vh] flex flex-col">
                                 <div className="flex justify-between items-start mb-6">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-primary/10 p-3 rounded-2xl">
@@ -624,7 +633,7 @@ const Profiles = () => {
                                     </button>
                                 </div>
 
-                                <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 space-y-6">
+                                <div className="flex-grow overflow-y-auto pr-2 space-y-6 min-h-0">
                                     <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
                                         <p className="text-text-main leading-relaxed mb-4">{selectedQA.description}</p>
                                         {selectedQA.code && <CodeBlock code={selectedQA.code} language={selectedQA.language} />}

@@ -30,7 +30,12 @@ const registerUser = async (req, res) => {
         // Verify OTP
         const otpRecord = await OTP.findOne({ email, otp });
         if (!otpRecord) {
-            return res.status(400).json({ message: 'Invalid or expired verification code' });
+            return res.status(400).json({ message: 'Invalid verification code' });
+        }
+
+        const isExpired = Date.now() - otpRecord.createdAt.getTime() > 1 * 60 * 1000;
+        if (isExpired) {
+            return res.status(400).json({ message: 'Verification code has expired. Please click "Resend Code".' });
         }
 
         // Hash password
@@ -503,6 +508,10 @@ const verifyOTP = async (req, res) => {
         return res.status(400).json({ message: 'Email and verification code are required' });
     }
 
+    if (!/^\d{6}$/.test(otp)) {
+        return res.status(400).json({ message: 'Verification code must be 6 digits' });
+    }
+
     console.log(`Attempting to verify OTP for ${email}. Submitted: ${otp}`);
 
     try {
@@ -515,6 +524,12 @@ const verifyOTP = async (req, res) => {
         }
 
         console.log(`Found OTP record for ${email}. Stored code: ${otpRecord.otp}`);
+
+        const isExpired = Date.now() - otpRecord.createdAt.getTime() > 1 * 60 * 1000;
+        if (isExpired) {
+            console.log(`OTP Expired for ${email}`);
+            return res.status(400).json({ message: 'Verification code has expired. Please click "Resend Code".' });
+        }
 
         if (otpRecord.otp !== otp.toString()) {
             console.log(`OTP Mismatch! Stored: ${otpRecord.otp}, Submitted: ${otp}`);

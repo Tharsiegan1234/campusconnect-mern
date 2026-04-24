@@ -1,9 +1,7 @@
 // controllers/Workshops/Workshops.js
 const Workshop = require('../../models/Workshops/Workshops');
 const User = require('../../models/User');
-const WorkshopRequest = require('../../models/Workshops/WorkshopRequest'); // Make sure this file exists
 
-// Helper functions
 const isBatchRep = (user) => {
   return user && user.isBatchRep === true;
 };
@@ -12,19 +10,11 @@ const isLecturer = (user) => {
   return user && user.email && user.email.match(/^ept\d{3}@sliitplatform\.com$/);
 };
 
-// Helper function to get batch rep for a specific faculty and year
-const getBatchRepForFacultyYear = async (faculty, academicYear) => {
-  const batchRep = await User.findOne({
-    isBatchRep: true,
-    'batchRepDetails.faculty': faculty,
-    'batchRepDetails.academicYear': academicYear
-  });
-  return batchRep;
-};
-
 // @desc    Create a new workshop
+// @route   POST /api/workshops
+// @access  Private (Batch Reps, Lecturers, Admins)
 const createWorkshop = async (req, res) => {
-  const { title, description, category, date, duration, location, capacity } = req.body;
+  const { title, description, category, date, duration, location, capacity, academicYear, faculty } = req.body;
 
   try {
     const user = await User.findById(req.user.id);
@@ -42,7 +32,10 @@ const createWorkshop = async (req, res) => {
       duration,
       location,
       capacity: capacity || 50,
+      academicYear: academicYear || 'Year 3 Sem 2',
+      faculty: faculty || 'Computing',
       createdBy: req.user.id,
+      createdByEmail: user.email,
       workshopType: new Date(date) > new Date() ? 'upcoming' : 'ended'
     });
 
@@ -54,19 +47,18 @@ const createWorkshop = async (req, res) => {
 };
 
 // @desc    Get all workshops with filtering
+// @route   GET /api/workshops
+// @access  Private
 const getAllWorkshops = async (req, res) => {
   try {
-    const { type, category, search } = req.query;
+    const { type, category, faculty, academicYear, search } = req.query;
     let filter = { isActive: true };
 
-    if (type && type !== 'all') {
-      filter.workshopType = type;
-    }
-
-    if (category && category !== 'all') {
-      filter.category = category;
-    }
-
+    if (type && type !== 'all') filter.workshopType = type;
+    if (category && category !== 'all') filter.category = category;
+    if (faculty && faculty !== 'all') filter.faculty = faculty;
+    if (academicYear && academicYear !== 'all') filter.academicYear = academicYear;
+    
     if (search && search.trim() !== '') {
       filter.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -78,11 +70,12 @@ const getAllWorkshops = async (req, res) => {
       .populate('createdBy', 'name email avatar isBatchRep batchRepDetails')
       .populate('registeredStudents', 'name avatar')
       .populate('materials.uploadedBy', 'name')
+      .populate('videos.uploadedBy', 'name')
       .sort({ date: 1 });
 
     const workshopsWithDetails = workshops.map(workshop => {
       const isRegistered = workshop.registeredStudents.some(
-        student => student._id.toString() === req.user.id
+        student => student._id && student._id.toString() === req.user.id
       );
       const isOnWaitlist = workshop.waitlist.some(
         student => student.toString() === req.user.id
@@ -92,7 +85,6 @@ const getAllWorkshops = async (req, res) => {
         ...workshop.toObject(),
         isRegistered,
         isOnWaitlist,
-        availableSpots: workshop.capacity - workshop.registeredStudents.length,
         registrationCount: workshop.registeredStudents.length
       };
     });
@@ -105,13 +97,16 @@ const getAllWorkshops = async (req, res) => {
 };
 
 // @desc    Get workshop by ID
+// @route   GET /api/workshops/:id
+// @access  Private
 const getWorkshopById = async (req, res) => {
   try {
     const workshop = await Workshop.findById(req.params.id)
       .populate('createdBy', 'name email avatar isBatchRep batchRepDetails')
       .populate('registeredStudents', 'name avatar email')
       .populate('waitlist', 'name avatar email')
-      .populate('materials.uploadedBy', 'name');
+      .populate('materials.uploadedBy', 'name')
+      .populate('videos.uploadedBy', 'name');
 
     if (!workshop) {
       return res.status(404).json({ message: 'Workshop not found' });
@@ -124,15 +119,12 @@ const getWorkshopById = async (req, res) => {
       student => student.toString() === req.user.id
     );
 
-    const workshopDetails = {
+    res.json({
       ...workshop.toObject(),
       isRegistered,
       isOnWaitlist,
-      availableSpots: workshop.capacity - workshop.registeredStudents.length,
       registrationCount: workshop.registeredStudents.length
-    };
-
-    res.json(workshopDetails);
+    });
   } catch (error) {
     console.error('Error getting workshop:', error);
     res.status(500).json({ message: error.message });
@@ -140,6 +132,8 @@ const getWorkshopById = async (req, res) => {
 };
 
 // @desc    Register for workshop
+// @route   POST /api/workshops/:id/register
+// @access  Private
 const registerForWorkshop = async (req, res) => {
   try {
     const workshop = await Workshop.findById(req.params.id);
@@ -153,25 +147,27 @@ const registerForWorkshop = async (req, res) => {
     }
 
     if (workshop.registeredStudents.includes(req.user.id)) {
-      return res.status(400).json({ message: 'You are already registered for this workshop' });
+      return res.status(400).json({ message: 'You are already registered' });
     }
 
     if (workshop.registeredStudents.length < workshop.capacity) {
       workshop.registeredStudents.push(req.user.id);
       await workshop.save();
-      res.json({ message: 'Successfully registered for workshop', status: 'registered' });
+      res.json({ message: 'Successfully registered!', status: 'registered' });
     } else {
       workshop.waitlist.push(req.user.id);
       await workshop.save();
-      res.json({ message: 'Workshop is full. You have been added to the waitlist', status: 'waitlisted' });
+      res.json({ message: 'Added to waitlist', status: 'waitlisted' });
     }
   } catch (error) {
-    console.error('Error registering for workshop:', error);
+    console.error('Error registering:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 // @desc    Cancel registration
+// @route   DELETE /api/workshops/:id/cancel
+// @access  Private
 const cancelRegistration = async (req, res) => {
   try {
     const workshop = await Workshop.findById(req.params.id);
@@ -190,24 +186,60 @@ const cancelRegistration = async (req, res) => {
       }
       
       await workshop.save();
-      res.json({ message: 'Registration cancelled successfully' });
+      res.json({ message: 'Registration cancelled' });
     } else {
       const waitlistIndex = workshop.waitlist.indexOf(req.user.id);
       if (waitlistIndex !== -1) {
         workshop.waitlist.splice(waitlistIndex, 1);
         await workshop.save();
-        res.json({ message: 'Removed from waitlist successfully' });
+        res.json({ message: 'Removed from waitlist' });
       } else {
-        res.status(400).json({ message: 'You are not registered for this workshop' });
+        res.status(400).json({ message: 'Not registered' });
       }
     }
   } catch (error) {
-    console.error('Error cancelling registration:', error);
+    console.error('Error cancelling:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Upload workshop material
+// @desc    Upload video
+// @route   POST /api/workshops/:id/videos
+// @access  Private (Batch Reps, Lecturers, Admins)
+const uploadVideo = async (req, res) => {
+  const { title, description, videoUrl, platform } = req.body;
+
+  try {
+    const workshop = await Workshop.findById(req.params.id);
+    const user = await User.findById(req.user.id);
+    const isAuthorized = isBatchRep(user) || isLecturer(user) || user.role === 'admin';
+
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Only batch reps and lecturers can upload videos' });
+    }
+
+    workshop.videos.push({
+      title,
+      description,
+      videoUrl,
+      platform: platform || 'youtube',
+      uploadedBy: req.user.id
+    });
+
+    await workshop.save();
+    res.status(201).json({ 
+      message: 'Video added successfully', 
+      video: workshop.videos[workshop.videos.length - 1] 
+    });
+  } catch (error) {
+    console.error('Error uploading video:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Upload material
+// @route   POST /api/workshops/:id/materials
+// @access  Private (Batch Reps, Lecturers, Admins)
 const uploadMaterial = async (req, res) => {
   const { title, description, fileUrl, fileName, fileType, fileSize } = req.body;
 
@@ -232,7 +264,7 @@ const uploadMaterial = async (req, res) => {
 
     await workshop.save();
     res.status(201).json({ 
-      message: 'Material uploaded successfully', 
+      message: 'Material added successfully', 
       material: workshop.materials[workshop.materials.length - 1] 
     });
   } catch (error) {
@@ -241,164 +273,9 @@ const uploadMaterial = async (req, res) => {
   }
 };
 
-// @desc    Request a workshop
-const requestWorkshop = async (req, res) => {
-  const { topic, description, category, faculty, academicYear } = req.body;
-
-  try {
-    const user = await User.findById(req.user.id);
-    
-    // Find the appropriate batch rep for this faculty and year
-    const batchRep = await getBatchRepForFacultyYear(faculty, academicYear);
-    
-    if (!batchRep) {
-      return res.status(404).json({ 
-        message: `No batch representative found for ${faculty} - ${academicYear}. Please contact an admin.` 
-      });
-    }
-    
-    const request = await WorkshopRequest.create({
-      topic,
-      description,
-      category: category || 'Technical',
-      faculty,
-      academicYear,
-      requestedBy: req.user.id,
-      requestedByName: user.name,
-      requestedByEmail: user.email,
-      status: 'pending',
-      assignedTo: batchRep._id,
-      assignedToName: batchRep.name,
-      assignedToEmail: batchRep.email
-    });
-
-    res.status(201).json({ 
-      message: 'Workshop request submitted successfully!',
-      request 
-    });
-  } catch (error) {
-    console.error('Error requesting workshop:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Get user's workshop requests
-const getMyRequests = async (req, res) => {
-  try {
-    const requests = await WorkshopRequest.find({ requestedBy: req.user.id })
-      .populate('assignedTo', 'name email')
-      .populate('scheduledWorkshop', 'title date location')
-      .sort('-createdAt');
-    
-    res.json(requests);
-  } catch (error) {
-    console.error('Error getting requests:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Get requests assigned to user
-const getAssignedRequests = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    const isAuthorized = isBatchRep(user) || isLecturer(user) || user.role === 'admin';
-    
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Only batch reps and lecturers can view assigned requests' });
-    }
-    
-    let query = {};
-    
-    if (isBatchRep(user)) {
-      query = {
-        faculty: user.batchRepDetails.faculty,
-        academicYear: user.batchRepDetails.academicYear,
-        status: { $ne: 'completed' }
-      };
-    } else if (isLecturer(user) || user.role === 'admin') {
-      query = { status: { $ne: 'completed' } };
-    }
-    
-    const requests = await WorkshopRequest.find(query)
-      .populate('requestedBy', 'name email avatar')
-      .populate('assignedTo', 'name email')
-      .sort('-createdAt');
-    
-    res.json(requests);
-  } catch (error) {
-    console.error('Error getting assigned requests:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Update request status
-const updateRequestStatus = async (req, res) => {
-  const { status, responseMessage } = req.body;
-  
-  try {
-    const request = await WorkshopRequest.findById(req.params.id);
-    
-    if (!request) {
-      return res.status(404).json({ message: 'Request not found' });
-    }
-    
-    const user = await User.findById(req.user.id);
-    const isBatchRepUser = isBatchRep(user);
-    const isLecturerUser = isLecturer(user);
-    const isAuthorized = isBatchRepUser || isLecturerUser || user.role === 'admin';
-    
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'You are not authorized to update this request' });
-    }
-    
-    if (isBatchRepUser && !isLecturerUser && user.role !== 'admin') {
-      if (request.faculty !== user.batchRepDetails.faculty || 
-          request.academicYear !== user.batchRepDetails.academicYear) {
-        return res.status(403).json({ message: 'You are not authorized to handle this request' });
-      }
-    }
-    
-    request.status = status;
-    request.responseMessage = responseMessage;
-    request.respondedAt = new Date();
-    
-    await request.save();
-    
-    res.json({ message: `Request ${status} successfully`, request });
-  } catch (error) {
-    console.error('Error updating request:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Vote for a workshop request
-const voteForRequest = async (req, res) => {
-  try {
-    const request = await WorkshopRequest.findById(req.params.id);
-    
-    if (!request) {
-      return res.status(404).json({ message: 'Request not found' });
-    }
-    
-    const hasVoted = request.votes.some(vote => vote.user.toString() === req.user.id);
-    
-    if (hasVoted) {
-      return res.status(400).json({ message: 'You have already voted for this request' });
-    }
-    
-    request.votes.push({ user: req.user.id });
-    request.voteCount = request.votes.length;
-    
-    await request.save();
-    
-    res.json({ message: 'Vote added successfully', voteCount: request.voteCount });
-  } catch (error) {
-    console.error('Error voting for request:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
 // @desc    Update workshop status
+// @route   PUT /api/workshops/:id/status
+// @access  Private (Batch Reps, Lecturers, Admins)
 const updateWorkshopStatus = async (req, res) => {
   const { status } = req.body;
 
@@ -408,15 +285,15 @@ const updateWorkshopStatus = async (req, res) => {
     const isAuthorized = isBatchRep(user) || isLecturer(user) || user.role === 'admin';
 
     if (!isAuthorized) {
-      return res.status(403).json({ message: 'Only batch reps and lecturers can update workshop status' });
+      return res.status(403).json({ message: 'Not authorized' });
     }
 
     workshop.workshopType = status;
     await workshop.save();
 
-    res.json({ message: 'Workshop status updated successfully', workshop });
+    res.json({ message: 'Status updated', workshop });
   } catch (error) {
-    console.error('Error updating workshop status:', error);
+    console.error('Error updating status:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -428,10 +305,6 @@ module.exports = {
   registerForWorkshop,
   cancelRegistration,
   uploadMaterial,
-  requestWorkshop,
-  updateWorkshopStatus,
-  getMyRequests,
-  getAssignedRequests,
-  updateRequestStatus,
-  voteForRequest
+  uploadVideo,
+  updateWorkshopStatus
 };

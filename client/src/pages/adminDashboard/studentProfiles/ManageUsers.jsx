@@ -76,6 +76,18 @@ const ManageUsers = () => {
         setUsers(users.map(user => user._id === updatedUser._id ? { ...user, ...updatedUser } : user));
     };
 
+    const handleToggleRep = async (user) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.put(`/api/users/toggle-rep/${user._id}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUsers(users.map(u => u._id === user._id ? { ...u, isBatchRep: res.data.isBatchRep } : u));
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to update representative status');
+        }
+    };
+
     const handleExportPDF = () => {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
@@ -319,15 +331,24 @@ const ManageUsers = () => {
                                             </td>
                                         )}
                                         <td className="px-8 py-5">
-                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-red-50 text-error ring-1 ring-red-100' :
+                                            <span className={`inline-block whitespace-nowrap px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-red-50 text-error ring-1 ring-red-100' :
                                                 user.role === 'expert' ? 'bg-green-50 text-green-600 ring-1 ring-green-100' :
+                                                    user.isBatchRep ? 'bg-orange-50 text-orange-600 ring-1 ring-orange-100' :
                                                     'bg-primary/5 text-primary ring-1 ring-primary/10'
                                                 }`}>
-                                                {user.role}
+                                                {user.isBatchRep ? 'Batch Rep' : user.role}
                                             </span>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <div className="flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity text-sm">
+                                            <div className="flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity text-sm items-center">
+                                                {user.role === 'student' && (
+                                                    <button
+                                                        onClick={() => handleToggleRep(user)}
+                                                        className={`whitespace-nowrap ${user.isBatchRep ? 'text-orange-500 hover:text-orange-600' : 'text-blue-500 hover:text-blue-600'} font-bold uppercase tracking-wider transition-colors`}
+                                                    >
+                                                        {user.isBatchRep ? 'Remove Rep' : 'Make Rep'}
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => handleEdit(user)}
                                                     className="text-primary hover:text-primary-dark font-bold uppercase tracking-wider transition-colors"

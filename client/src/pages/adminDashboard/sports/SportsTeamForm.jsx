@@ -2,31 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
-const formatDateInput = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
-
-const formatTimeInput = (value) => {
-    if (!value) return '';
-    const date = new Date(value);
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
-};
-
-const getTodayMinDate = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
-
 const SportsTeamForm = ({ team = null, onSaved, onCancel }) => {
     const [loading, setLoading] = useState(false);
 
@@ -51,8 +26,7 @@ const SportsTeamForm = ({ team = null, onSaved, onCancel }) => {
             description: team?.description || '',
             coach: team?.coach || '',
             maxMembers: team?.maxMembers || '',
-            sessionDate: formatDateInput(team?.nextSession?.date),
-            sessionTime: formatTimeInput(team?.nextSession?.date),
+            sessionDate: team?.nextSession?.date ? new Date(team.nextSession.date).toISOString().slice(0, 16) : '',
             sessionLocation: team?.nextSession?.location || '',
             sessionDescription: team?.nextSession?.description || ''
         },
@@ -63,9 +37,9 @@ const SportsTeamForm = ({ team = null, onSaved, onCancel }) => {
             try {
                 const payload = { name: values.name, sportType: values.sportType, description: values.description, coach: values.coach };
                 if (values.maxMembers !== null && values.maxMembers !== '') payload.maxMembers = Number(values.maxMembers);
-                if (values.sessionDate && values.sessionTime) {
+                if (values.sessionDate) {
                     payload.nextSession = {
-                        date: `${values.sessionDate}T${values.sessionTime}`,
+                        date: values.sessionDate,
                         location: values.sessionLocation || '',
                         description: values.sessionDescription || ''
                     };
@@ -146,17 +120,13 @@ const SportsTeamForm = ({ team = null, onSaved, onCancel }) => {
                     <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">📅 Next Training Session <span className="text-xs font-normal text-gray-500">(optional)</span></h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Date</label>
-                            <input name="sessionDate" type="date" min={getTodayMinDate()} value={formik.values.sessionDate} onChange={formik.handleChange} className="mt-1 block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-[#1E3A8A] focus:border-[#1E3A8A]" />
+                            <label className="block text-sm font-medium text-gray-700">Date & Time</label>
+                            <input name="sessionDate" type="datetime-local" value={formik.values.sessionDate} onChange={formik.handleChange} className="mt-1 block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-[#1E3A8A] focus:border-[#1E3A8A]" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Time</label>
-                            <input name="sessionTime" type="time" value={formik.values.sessionTime} onChange={formik.handleChange} className="mt-1 block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-[#1E3A8A] focus:border-[#1E3A8A]" />
+                            <label className="block text-sm font-medium text-gray-700">Location</label>
+                            <input name="sessionLocation" value={formik.values.sessionLocation} onChange={formik.handleChange} className="mt-1 block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-[#1E3A8A] focus:border-[#1E3A8A]" placeholder="e.g. Indoor Court A" />
                         </div>
-                    </div>
-                    <div className="mt-3">
-                        <label className="block text-sm font-medium text-gray-700">Location</label>
-                        <input name="sessionLocation" value={formik.values.sessionLocation} onChange={formik.handleChange} className="mt-1 block w-full border border-gray-300 rounded-lg p-2.5 focus:ring-[#1E3A8A] focus:border-[#1E3A8A]" placeholder="e.g. Indoor Court A" />
                     </div>
                     <div className="mt-3">
                         <label className="block text-sm font-medium text-gray-700">Session Description</label>

@@ -26,17 +26,33 @@ const workshopSchema = new mongoose.Schema({
     required: true
   },
   duration: {
-    type: Number, // in minutes
+    type: Number,
     required: true
   },
   location: {
     type: String,
-    required: true // Zoom link or physical location
+    required: true
   },
   capacity: {
     type: Number,
     default: 50
   },
+  academicYear: {
+    type: String,
+    enum: ['Year 1 Sem 1', 'Year 1 Sem 2', 'Year 2 Sem 1', 'Year 2 Sem 2', 'Year 3 Sem 1', 'Year 3 Sem 2', 'Year 4 Sem 1', 'Year 4 Sem 2'],
+    default: 'Year 3 Sem 2'
+  },
+  faculty: {
+    type: String,
+    enum: ['Computing', 'Engineering', 'Humanities and Sciences', 'Business', 'Architecture', 'Other'],
+    default: 'Computing'
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  createdByEmail: String,
   registeredStudents: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -45,52 +61,23 @@ const workshopSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
   materials: [{
-    title: {
-      type: String,
-      required: true
-    },
+    title: { type: String, required: true },
     description: String,
-    fileUrl: {
-      type: String,
-      required: true
-    },
+    fileUrl: { type: String, required: true },
     fileName: String,
     fileType: String,
     fileSize: Number,
-    uploadedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    uploadedAt: {
-      type: Date,
-      default: Date.now
-    }
+    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    uploadedAt: { type: Date, default: Date.now }
   }],
-  requests: [{
-    topic: {
-      type: String,
-      required: true
-    },
+  videos: [{
+    title: { type: String, required: true },
     description: String,
-    requestedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    requestedAt: {
-      type: Date,
-      default: Date.now
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending'
-    }
+    videoUrl: { type: String, required: true },
+    platform: { type: String, enum: ['youtube', 'vimeo', 'other'], default: 'youtube' },
+    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    uploadedAt: { type: Date, default: Date.now }
   }],
   isActive: {
     type: Boolean,
@@ -99,9 +86,5 @@ const workshopSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
-// Index for better query performance
-workshopSchema.index({ workshopType: 1, date: 1 });
-workshopSchema.index({ category: 1 });
 
 module.exports = mongoose.model('Workshop', workshopSchema);

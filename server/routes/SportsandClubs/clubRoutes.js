@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { createClub, getClubs, getClub, updateClub, deleteClub, joinClub, requestToJoin, getRequests, approveRequest, rejectRequest, removeMember, activateMember, getAllMembers, getAllClubs, activateClub, bulkUpdateClubs, getMyRequests, cancelRequest, getAllRequests, setNextSession, toggleClubRsvp } = require('../../controllers/SportsandClubs/clubController');
-const { protect, optionalProtect } = require('../../middleware/authMiddleware');
-const { roleAuthorize } = require('../../middleware/roleMiddleware');
+const { createClub, getClubs, getClub, updateClub, deleteClub, joinClub, requestToJoin, getRequests, approveRequest, rejectRequest, removeMember, activateMember, getAllMembers, getAllClubs, activateClub, bulkUpdateClubs, getMyRequests, cancelRequest, getAllRequests, setNextSession, toggleClubRsvp } = require('../controllers/clubController');
+const { protect, optionalProtect } = require('../middleware/authMiddleware');
+const { roleAuthorize } = require('../middleware/roleMiddleware');
 
 // allow optional auth so admins see all clubs while keeping public access for non-auth users
 router.get('/', optionalProtect, getClubs);

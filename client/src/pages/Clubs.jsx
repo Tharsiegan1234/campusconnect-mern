@@ -1,19 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useToast } from '../context/ToastContext';
-import ModuleAssistant from '../components/ModuleAssistant';
 import './Clubs.css';
-
-const getTodayMinDateTime = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const hours = String(today.getHours()).padStart(2, '0');
-    const minutes = String(today.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
 
 // Live countdown timer component
 const CountdownTimer = ({ targetDate }) => {
@@ -67,7 +54,6 @@ const sampleFeaturesRight = [
 
 const Clubs = () => {
     const navigate = useNavigate();
-    const { showToast } = useToast();
     const [clubs, setClubs] = useState([]);
     const [userRequests, setUserRequests] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -164,7 +150,7 @@ const Clubs = () => {
             setSelectedClub(data);
         } catch (err) {
             console.error(err);
-            showToast('Could not load club members', 'error');
+            alert('Could not load club members');
         } finally {
             setLoadingMembers(false);
         }
@@ -232,7 +218,7 @@ const Clubs = () => {
                                                 className="text-sm text-red-600 hover:text-red-800 font-medium px-4 py-2 border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
                                                 onClick={async () => {
                                                     const token = localStorage.getItem('token');
-                                                    if (!token) return showToast('Please login', 'warning');
+                                                    if (!token) return alert('Please login');
                                                     try {
                                                         const res = await fetch(`/api/clubs/requests/${r._id}`, {
                                                             method: 'DELETE',
@@ -242,9 +228,9 @@ const Clubs = () => {
                                                         if (!res.ok) throw new Error(body.message || 'Could not cancel');
                                                         // remove from local list
                                                         setUserRequests(prev => prev.filter(x => (x._id || x.id) !== (r._id || r.id)));
-                                                        showToast(body.message || 'Request cancelled', 'success');
+                                                        alert(body.message || 'Request cancelled');
                                                     } catch (err) {
-                                                        showToast(err.message || 'Cancel failed', 'error');
+                                                        alert(err.message || 'Cancel failed');
                                                     }
                                                 }}
                                             >
@@ -279,7 +265,6 @@ const Clubs = () => {
                             {clubs.map((c) => {
                                 const clubId = c._id || c.id;
                                 const isMember = currentUser && c.members && (c.members.includes(currentUser._id) || c.members.includes(currentUser.id));
-                                const isPending = userRequests.some(r => (r.club?._id || r.club) === clubId && r.status === 'pending');
                                 const isAdmin = currentUser && currentUser.role === 'admin';
                                 const isCreator = currentUser && c.createdBy && (c.createdBy._id === (currentUser._id || currentUser.id) || c.createdBy === (currentUser._id || currentUser.id));
 
@@ -316,10 +301,6 @@ const Clubs = () => {
                                                         <span>📅</span> Session
                                                     </button>
                                                 </div>
-                                            ) : isPending ? (
-                                                <button className="flex-1 bg-amber-50 text-amber-700 font-semibold py-2.5 px-3 rounded-lg text-sm border border-amber-200 shadow-sm flex items-center justify-center gap-2 cursor-default">
-                                                    <span>⏳</span> Pending
-                                                </button>
                                             ) : (isAdmin || isCreator) ? (
                                                 <div className="flex gap-2 flex-1">
                                                     <button
@@ -352,7 +333,7 @@ const Clubs = () => {
                                                                         setUserRequests(Array.isArray(rdata) ? rdata : []);
                                                                     }
                                                                 } catch (e) { /* ignore */ }
-                                                            } catch (err) { showToast(err.message, 'error'); }
+                                                            } catch (err) { alert(err.message); }
                                                         }}
                                                     >
                                                         <span>✚</span> Join
@@ -400,7 +381,7 @@ const Clubs = () => {
                                                                     setUserRequests(Array.isArray(rdata) ? rdata : []);
                                                                 }
                                                             } catch (e) { /* ignore */ }
-                                                        } catch (err) { showToast(err.message, 'error'); }
+                                                        } catch (err) { alert(err.message); }
                                                     }}
                                                 >
                                                     <span>✚</span> Join
@@ -421,15 +402,6 @@ const Clubs = () => {
                     )}
                 </section>
             </main>
-
-            <ModuleAssistant
-                moduleName="clubs"
-                moduleTitle="Clubs"
-                items={clubs}
-                loading={loading}
-                anchorId="club-list"
-                onShowSchedules={() => setShowScheduleOverview(true)}
-            />
 
             {selectedClub && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -539,7 +511,7 @@ const Clubs = () => {
                                                     if (!res.ok) throw new Error(body.message);
                                                     setJoinSuccess(prev => ({...prev, _rsvpStatus: 'going', _going: body.going, _notGoing: body.notGoing }));
                                                     setClubs(prev => prev.map(cl => (cl._id || cl.id) === joinSuccess.id ? {...cl, _rsvpStatus: 'going', _going: body.going, _notGoing: body.notGoing } : cl));
-                                                } catch (err) { showToast(err.message, 'error'); }
+                                                } catch (err) { alert(err.message); }
                                             }}
                                         >
                                             {joinSuccess._rsvpStatus === 'going' && <span>✓</span>} Join Meeting {joinSuccess._going ? `(${joinSuccess._going})` : ''}
@@ -562,7 +534,7 @@ const Clubs = () => {
                                                     if (!res.ok) throw new Error(body.message);
                                                     setJoinSuccess(prev => ({...prev, _rsvpStatus: 'not_going', _going: body.going, _notGoing: body.notGoing }));
                                                     setClubs(prev => prev.map(cl => (cl._id || cl.id) === joinSuccess.id ? {...cl, _rsvpStatus: 'not_going', _going: body.going, _notGoing: body.notGoing } : cl));
-                                                } catch (err) { showToast(err.message, 'error'); }
+                                                } catch (err) { alert(err.message); }
                                             }}
                                         >
                                             {joinSuccess._rsvpStatus === 'not_going' && <span>✕</span>} Can't Attend {joinSuccess._notGoing ? `(${joinSuccess._notGoing})` : ''}
@@ -579,7 +551,6 @@ const Clubs = () => {
                                             <label className="block text-[10px] font-bold text-blue-700 uppercase mb-1 ml-1">Date & Time</label>
                                             <input 
                                                 type="datetime-local" 
-                                                min={getTodayMinDateTime()}
                                                 value={editDate}
                                                 onChange={(e) => setEditDate(e.target.value)}
                                                 className="w-full bg-white border border-blue-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-gray-700"
@@ -615,8 +586,7 @@ const Clubs = () => {
                                                         setJoinSuccess(prev => ({...prev, nextSession: body.nextSession }));
                                                         setClubs(prev => prev.map(cl => (cl._id || cl.id) === joinSuccess.id ? {...cl, nextSession: body.nextSession } : cl));
                                                         setIsEditingSession(false);
-                                                        showToast('Meeting scheduled successfully!', 'success');
-                                                    } catch (err) { showToast(err.message, 'error'); }
+                                                    } catch (err) { alert(err.message); }
                                                     finally { setIsSavingSession(false); }
                                                 }}
                                             >

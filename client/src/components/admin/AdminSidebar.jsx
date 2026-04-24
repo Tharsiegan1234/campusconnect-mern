@@ -22,7 +22,7 @@ const AdminSidebar = () => {
         },
         {
             title: 'Students & Q&A',
-            path: '/admin/students',
+            path: '/admin/qa-dashboard',
             icon: (active) => (
                 <IconWrapper isActive={active}>
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

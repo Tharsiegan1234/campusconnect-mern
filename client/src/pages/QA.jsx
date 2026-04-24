@@ -109,6 +109,13 @@ const QA = () => {
     const [memberSearch, setMemberSearch] = useState('');
     const [communityView, setCommunityView] = useState('category'); // 'category' or 'all'
     const [message, setMessage] = useState('');
+    const [confirmModal, setConfirmModal] = useState({ 
+        show: false, 
+        id: null, 
+        type: '', // 'question', 'answer', 'solve', 'leave'
+        title: '', 
+        message: '' 
+    });
     const location = useLocation();
     const navigate = useNavigate();
     const { onlineUsers } = useSocket() || { onlineUsers: [] };
@@ -232,30 +239,14 @@ const QA = () => {
         }
     };
 
-    const handleLeaveGroup = async (groupId) => {
-        if (!window.confirm("Are you sure you want to leave this group?")) return;
-        try {
-            const token = localStorage.getItem('token');
-            await axios.post(`/api/qa/groups/${groupId}/leave`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            // Update user in local storage
-            const updatedUser = {
-                ...user,
-                joinedGroups: user.joinedGroups.filter(id => id !== groupId)
-            };
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-            setUser(updatedUser);
-
-            // Refresh groups and questions
-            fetchGroups();
-            setQuestions([]);
-            setMessage("Successfully left the group");
-            setTimeout(() => setMessage(''), 3000);
-        } catch (error) {
-            console.error("Error leaving group:", error);
-            setMessage(error.response?.data?.message || "Failed to leave group");
-        }
+    const handleLeaveGroup = (groupId) => {
+        setConfirmModal({
+            show: true,
+            id: groupId,
+            type: 'leave',
+            title: 'Leave Group?',
+            message: 'Are you sure you want to leave this group? You will lose access to its discussions.'
+        });
     };
 
     const inferLanguage = (topic) => {
@@ -341,18 +332,13 @@ const QA = () => {
     };
 
     const handleDeleteQuestion = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this question?")) return;
-        try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`/api/qa/questions/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            fetchQuestions(selectedGroup._id);
-            setMessage("Question deleted");
-            setTimeout(() => setMessage(''), 3000);
-        } catch (error) {
-            setMessage(error.response?.data?.message || "Failed to delete question");
-        }
+        setConfirmModal({
+            show: true,
+            id,
+            type: 'question',
+            title: 'Delete Question?',
+            message: 'This will permanently remove your question and all of its answers. This action cannot be undone.'
+        });
     };
 
     const handleUpdateAnswer = async (e) => {
@@ -378,18 +364,13 @@ const QA = () => {
     };
 
     const handleDeleteAnswer = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this answer?")) return;
-        try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`/api/qa/answers/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            fetchQuestions(selectedGroup._id);
-            setMessage("Answer deleted");
-            setTimeout(() => setMessage(''), 3000);
-        } catch (error) {
-            setMessage(error.response?.data?.message || "Failed to delete answer");
-        }
+        setConfirmModal({
+            show: true,
+            id,
+            type: 'answer',
+            title: 'Delete Answer?',
+            message: 'This will permanently remove your answer. This action cannot be undone.'
+        });
     };
 
     const canEdit = (createdAt) => {
@@ -409,18 +390,58 @@ const QA = () => {
         }
     };
 
-    const handleMarkSolved = async (answerId) => {
-        if (!window.confirm("Mark this answer as the accepted solution?")) return;
+    const handleMarkSolved = (answerId) => {
+        setConfirmModal({
+            show: true,
+            id: answerId,
+            type: 'solve',
+            title: 'Accept Solution?',
+            message: 'Mark this answer as the accepted solution for your question?'
+        });
+    };
+
+    const executeConfirmAction = async () => {
+        const { id, type } = confirmModal;
+        setConfirmModal({ ...confirmModal, show: false });
+        const token = localStorage.getItem('token');
+
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(`/api/qa/answers/${answerId}/solve`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            fetchQuestions(selectedGroup._id);
-            setMessage("Question marked as solved!");
+            if (type === 'question') {
+                await axios.delete(`/api/qa/questions/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                fetchQuestions(selectedGroup._id);
+                setMessage("Question deleted");
+            } else if (type === 'answer') {
+                await axios.delete(`/api/qa/answers/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                fetchQuestions(selectedGroup._id);
+                setMessage("Answer deleted");
+            } else if (type === 'solve') {
+                await axios.post(`/api/qa/answers/${id}/solve`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                fetchQuestions(selectedGroup._id);
+                setMessage("Question marked as solved!");
+            } else if (type === 'leave') {
+                await axios.post(`/api/qa/groups/${id}/leave`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const updatedUser = {
+                    ...user,
+                    joinedGroups: user.joinedGroups.filter(gid => gid !== id)
+                };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                setUser(updatedUser);
+                fetchGroups();
+                setQuestions([]);
+                setMessage("Successfully left the group");
+            }
             setTimeout(() => setMessage(''), 3000);
         } catch (error) {
-            setMessage(error.response?.data?.message || "Failed to mark as solved");
+            setMessage(error.response?.data?.message || `Failed to perform action`);
+            setTimeout(() => setMessage(''), 3000);
         }
     };
 
@@ -600,10 +621,12 @@ const QA = () => {
                                                 >
                                                     <div className="flex justify-between items-start mb-4">
                                                         <div className="flex items-center gap-2">
-                                                            <img src={`/${question.askedBy?.avatar || 'src/assets/images/Avatars/avatar1.png'}`} alt="" className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200" />
+                                                            <img src={`/${question.askedBy?.avatar || 'src/assets/images/Avatars/avatar1.png'}`} alt="" className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex-shrink-0 object-cover" />
                                                             <div>
                                                                 <div className="text-sm font-bold text-text-main">{question.askedBy?.name || "Unknown User"}</div>
-                                                                <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Student</div>
+                                                                <div className={`text-[10px] font-bold uppercase tracking-wider ${question.askedBy?.isBatchRep ? 'text-orange-500' : 'text-text-muted'}`}>
+                                                                    {question.askedBy?.isBatchRep ? 'Batch Rep' : 'Student'}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-3">
@@ -721,8 +744,8 @@ const QA = () => {
                                                                 }`}>
                                                                 <div className="flex items-center justify-between mb-3">
                                                                     <div className="flex items-center gap-2">
-                                                                        <div className="relative">
-                                                                            <img src={`/${answer.answeredBy?.avatar || 'src/assets/images/Avatars/expert1.png'}`} alt="" className="w-6 h-6 rounded-full border border-primary/20" />
+                                                                        <div className="relative flex-shrink-0">
+                                                                            <img src={`/${answer.answeredBy?.avatar || 'src/assets/images/Avatars/expert1.png'}`} alt="" className="w-6 h-6 rounded-full border border-primary/20 object-cover" />
                                                                             {answer.isSolved && (
                                                                                 <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full w-3 h-3 flex items-center justify-center text-[6px] border border-white shadow-sm">✓</div>
                                                                             )}
@@ -955,8 +978,8 @@ const QA = () => {
                                     const isOnline = onlineUsers?.includes(expert._id);
                                     return (
                                         <Link to={`/profile/${expert._id}`} key={expert._id} className="flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-gray-50 group">
-                                            <div className="relative">
-                                                <img src={`/${expert.avatar}`} alt="" className="w-10 h-10 rounded-full border border-primary/10" />
+                                            <div className="relative flex-shrink-0">
+                                                <img src={`/${expert.avatar}`} alt="" className="w-10 h-10 rounded-full border border-primary/10 object-cover" />
                                                 <div className={`absolute bottom-0 left-0 w-3 h-3 rounded-full border-2 border-white ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                                                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-primary text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white font-black">✓</div>
                                             </div>
@@ -992,12 +1015,17 @@ const QA = () => {
                                     const isOnline = onlineUsers?.includes(student._id);
                                     return (
                                         <Link to={`/profile/${student._id}`} key={student._id} className="flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-gray-50 group">
-                                            <div className="relative">
-                                                <img src={`/${student.avatar}`} alt="" className="w-10 h-10 rounded-full border border-gray-100" />
+                                            <div className="relative flex-shrink-0">
+                                                <img src={`/${student.avatar}`} alt="" className="w-10 h-10 rounded-full border border-gray-100 object-cover" />
                                                 <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                                             </div>
                                             <div className="flex-grow min-w-0">
-                                                <div className="text-sm font-bold text-text-main truncate group-hover:text-primary transition-colors">{student.name}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-sm font-bold text-text-main truncate group-hover:text-primary transition-colors">{student.name}</div>
+                                                    {student.isBatchRep && (
+                                                        <span className="text-[8px] font-black bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-full uppercase tracking-tighter border border-orange-100 flex-shrink-0">Rep</span>
+                                                    )}
+                                                </div>
                                                 <div className="text-[9px] text-text-muted font-bold flex flex-wrap items-center gap-1 mt-1">
                                                     {student.academicInfo?.year && (
                                                         <span className="bg-blue-50 text-primary px-1.5 py-0.5 rounded-lg border border-blue-100">
@@ -1167,6 +1195,62 @@ const QA = () => {
                         </div>
                     )
                 }
+                {/* Confirm Action Modal */}
+                {confirmModal.show && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl relative overflow-hidden text-center"
+                        >
+                            {/* Visual Indicator */}
+                            <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6 ${
+                                ['question', 'answer'].includes(confirmModal.type) 
+                                ? 'bg-red-50 text-red-500' 
+                                : 'bg-primary/10 text-primary'
+                            }`}>
+                                {['question', 'answer'].includes(confirmModal.type) ? (
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3M4 7h16" />
+                                    </svg>
+                                ) : confirmModal.type === 'solve' ? (
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                )}
+                            </div>
+
+                            <h2 className="text-2xl font-black text-text-main mb-2">{confirmModal.title}</h2>
+                            <p className="text-text-secondary text-sm font-medium leading-relaxed mb-8">
+                                {confirmModal.message}
+                            </p>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setConfirmModal({ ...confirmModal, show: false })}
+                                    className="flex-1 py-3.5 bg-gray-50 text-text-secondary font-bold rounded-2xl hover:bg-gray-100 transition-all active:scale-95"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={executeConfirmAction}
+                                    className={`flex-1 py-3.5 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-95 ${
+                                        ['question', 'answer'].includes(confirmModal.type)
+                                        ? 'bg-red-500 shadow-red-500/20 hover:bg-red-600'
+                                        : 'bg-primary shadow-primary/20 hover:bg-primary-dark'
+                                    }`}
+                                >
+                                    Confirm
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
             </AnimatePresence >
         </div >
     );

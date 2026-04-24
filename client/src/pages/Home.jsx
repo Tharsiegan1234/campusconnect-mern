@@ -1,5 +1,5 @@
 // pages/Home.jsx
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 
@@ -14,24 +14,37 @@ const Home = () => {
     // Slideshow images - removed buttons
     const slides = [
         {
-            image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&h=600&fit=crop",
-            title: "Connect with Peers",
-            description: "Join vibrant communities and make lifelong connections",
+            image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&fit=crop",
+            title: "Connect with Peer Communities",
+            description: "Join vibrant student circles, collaborate on projects, and build a network that lasts a lifetime.",
+            greeting: "Hi, there!",
+            cards: [
+                { label: "Active Students", value: "5000+", icon: "👨‍🎓" },
+                { label: "Batch Reps", value: "48", icon: "⭐" },
+                { label: "Community", value: "Global", icon: "🌍" }
+            ]
         },
         {
-            image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&h=600&fit=crop",
-            title: "Collaborative Learning",
-            description: "Study together, grow together with our study groups",
+            image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&fit=crop",
+            title: "Expert Knowledge at Your Fingertips",
+            description: "Learn directly from industry experts and senior students through curated workshops and Q&A sessions.",
+            greeting: "Growth Mindset",
+            cards: [
+                { label: "Expert Mentors", value: "50+", icon: "👨‍🏫" },
+                { label: "Workshops", value: "200+", icon: "🎯" },
+                { label: "Satisfaction", value: "4.9", icon: "⭐" }
+            ]
         },
         {
-            image: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200&h=600&fit=crop",
-            title: "Expert Workshops",
-            description: "Learn from industry experts and enhance your skills",
-        },
-        {
-            image: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=1200&h=600&fit=crop",
-            title: "Knowledge Sharing",
-            description: "Ask questions, share insights, and help others grow",
+            image: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&fit=crop",
+            title: "Unified Student Experience",
+            description: "From study groups to sports clubs, manage your entire campus life in one powerful, intuitive platform.",
+            greeting: "All-in-One",
+            cards: [
+                { label: "Study Groups", value: "150+", icon: "📚" },
+                { label: "Clubs", value: "30+", icon: "🎭" },
+                { label: "Events", value: "Daily", icon: "📅" }
+            ]
         }
     ];
 
@@ -190,119 +203,159 @@ const Home = () => {
 
     return (
         <div className="overflow-hidden">
-            {/* Hero Slideshow Section - No buttons, only text */}
-            <motion.div 
-                style={{ opacity, scale }}
-                className="relative h-[90vh] min-h-[600px] w-full overflow-hidden"
-            >
-                {slides.map((slide, index) => (
-                    <motion.div
-                        key={index}
-                        className="absolute inset-0 w-full h-full"
-                        initial={{ opacity: 0 }}
-                        animate={{ 
-                            opacity: currentSlide === index ? 1 : 0,
-                            scale: currentSlide === index ? 1 : 1.1
-                        }}
-                        transition={{ duration: 0.8 }}
-                    >
-                        <div 
-                            className="absolute inset-0 bg-cover bg-center"
-                            style={{ backgroundImage: `url(${slide.image})` }}
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40"></div>
+            {/* Modern Hero & Welcome Combined Section */}
+            <section className="relative min-h-[90vh] flex items-center pt-10 pb-10 md:py-0 overflow-hidden bg-white">
+                <div className="max-w-7xl mx-auto px-4 w-full h-full">
+                    <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[700px]">
+
+                        {/* Left Column: Animated Text Content */}
+                        <div className="relative z-20 order-2 lg:order-1">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={currentSlide}
+                                    initial={{ opacity: 0, x: -50 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 50 }}
+                                    transition={{ duration: 0.6 }}
+                                    className="max-w-xl"
+                                >
+                                    <motion.span
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                        className="inline-block px-4 py-1.5 rounded-full bg-primary/5 text-primary text-sm font-bold mb-6 tracking-wide"
+                                    >
+                                        {slides[currentSlide].greeting}
+                                    </motion.span>
+
+                                    <h1 className="text-5xl md:text-7xl font-black text-text-main mb-8 leading-[1.1] font-heading uppercase">
+                                        {slides[currentSlide].title.split(' ').map((word, i) => (
+                                            <span key={i} className={i % 2 === 0 ? "text-primary" : "text-accent"}>
+                                                {word}{' '}
+                                            </span>
+                                        ))}
+                                    </h1>
+
+                                    <p className="text-xl text-text-secondary mb-10 leading-relaxed font-body">
+                                        {slides[currentSlide].description}
+                                    </p>
+
+                                    <div className="flex flex-wrap gap-5">
+                                        <button
+                                            onClick={() => handleNavigation('/register')}
+                                            className="px-10 py-4 bg-primary text-white rounded-2xl font-black text-lg shadow-2xl shadow-primary/30 hover:bg-primary-dark hover:-translate-y-1 transition-all flex items-center gap-3 group"
+                                        >
+                                            Get Started
+                                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick={() => handleNavigation('/profiles')}
+                                            className="px-10 py-4 border-2 border-primary/20 text-primary rounded-2xl font-black text-lg hover:bg-primary/5 transition-all"
+                                        >
+                                            Explore
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </AnimatePresence>
+
+                            {/* Slide Navigation Controls */}
+                            <div className="mt-16 flex items-center gap-6">
+                                <div className="flex gap-2">
+                                    {slides.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => {
+                                                setIsAutoPlaying(false);
+                                                setCurrentSlide(i);
+                                                setTimeout(() => setIsAutoPlaying(true), 10000);
+                                            }}
+                                            className={`h-1.5 rounded-full transition-all duration-500 ${currentSlide === i ? 'w-12 bg-primary' : 'w-4 bg-primary/10'
+                                                }`}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={prevSlide} className="p-3 rounded-xl border border-primary/10 text-primary hover:bg-primary hover:text-white transition-all">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                    </button>
+                                    <button onClick={nextSlide} className="p-3 rounded-xl border border-primary/10 text-primary hover:bg-primary hover:text-white transition-all">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div className="relative h-full flex items-center justify-center text-center px-4">
-                            <motion.div
-                                initial={{ y: 50, opacity: 0 }}
-                                animate={{ 
-                                    y: currentSlide === index ? 0 : 50,
-                                    opacity: currentSlide === index ? 1 : 0
-                                }}
-                                transition={{ duration: 0.6, delay: 0.2 }}
-                                className="max-w-4xl"
-                            >
-                                <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 font-heading">
-                                    {slide.title}
-                                </h1>
-                                <p className="text-xl md:text-2xl text-gray-200">
-                                    {slide.description}
-                                </p>
-                            </motion.div>
+
+                        {/* Right Column: Visual Component */}
+                        <div className="relative z-10 order-1 lg:order-2 h-[400px] md:h-[550px] flex items-center justify-center">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={currentSlide}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 1.1 }}
+                                    transition={{ duration: 0.8 }}
+                                    className="relative w-full h-full flex items-center justify-center"
+                                >
+                                    {/* Abstract background shapes */}
+                                    <motion.div
+                                        animate={{
+                                            rotate: [0, 90, 180, 270, 360],
+                                            borderRadius: ["40% 60% 70% 30% / 40% 50% 60% 50%", "70% 30% 50% 50% / 30% 60% 40% 70%", "40% 60% 70% 30% / 40% 50% 60% 50%"]
+                                        }}
+                                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                                        className="absolute w-[85%] h-[85%] bg-gradient-to-br from-primary/10 to-accent/5 blur-3xl"
+                                    />
+                                    <motion.div
+                                        animate={{
+                                            borderRadius: ["60% 40% 30% 70% / 60% 30% 70% 40%", "30% 60% 70% 40% / 50% 60% 30% 60%", "60% 40% 30% 70% / 60% 30% 70% 40%"]
+                                        }}
+                                        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                                        className="absolute w-[80%] h-[80%] bg-gradient-to-tr from-accent/10 to-primary/5"
+                                    />
+
+                                    {/* Main Image Container with "Blob" mask */}
+                                    <div className="relative w-[75%] h-[75%] overflow-hidden z-20 shadow-2xl rounded-[3.5rem] rotate-3 group-hover:rotate-0 transition-all duration-700">
+                                        <div className="absolute inset-0 bg-primary/10"></div>
+                                        <motion.img
+                                            src={slides[currentSlide].image}
+                                            className="w-full h-full object-cover"
+                                            initial={{ scale: 1.2 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ duration: 2 }}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                    </div>
+
+                                    {/* Floating Status Cards */}
+                                    {slides[currentSlide].cards.map((card, i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.4 + (i * 0.1) }}
+                                            className={`absolute z-30 bg-white/90 backdrop-blur-xl p-3 md:p-5 rounded-[2rem] shadow-2xl border border-white/50 flex items-center gap-3 group hover:scale-105 transition-all
+                                                ${i === 0 ? '-top-2 -left-2 md:-top-6 md:left-0' : ''}
+                                                ${i === 1 ? 'bottom-6 -right-2 md:-right-6' : ''}
+                                                ${i === 2 ? '-bottom-6 left-1/4 md:left-1/3' : ''}
+                                            `}
+                                        >
+                                            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-colors">
+                                                {card.icon}
+                                            </div>
+                                            <div>
+                                                <div className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-0.5">{card.label}</div>
+                                                <div className="text-xl font-black text-text-main tabular-nums">{card.value}</div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            </AnimatePresence>
                         </div>
-                    </motion.div>
-                ))}
-
-                {/* Slideshow Controls */}
-                <button
-                    onClick={prevSlide}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-3 rounded-full transition-all backdrop-blur-sm z-10"
-                    aria-label="Previous slide"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-                <button
-                    onClick={nextSlide}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-3 rounded-full transition-all backdrop-blur-sm z-10"
-                    aria-label="Next slide"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
-
-                {/* Slide Indicators */}
-                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-                    {slides.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => {
-                                setIsAutoPlaying(false);
-                                setCurrentSlide(index);
-                                setTimeout(() => setIsAutoPlaying(true), 10000);
-                            }}
-                            className={`w-2 h-2 rounded-full transition-all ${
-                                currentSlide === index ? 'w-8 bg-accent' : 'bg-white/50'
-                            }`}
-                            aria-label={`Go to slide ${index + 1}`}
-                        />
-                    ))}
-                </div>
-            </motion.div>
-
-            {/* Welcome Section */}
-            <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="py-20 text-center"
-            >
-                <div className="max-w-4xl mx-auto px-4">
-                    <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6 font-heading">
-                        Welcome to <span className="text-accent">CampusConnect</span>
-                    </h2>
-                    <p className="text-xl text-text-secondary mb-8">
-                        Your unified platform for student life. Connect, collaborate, and grow with peers and experts.
-                    </p>
-                    <div className="flex justify-center gap-4 flex-wrap">
-                        <button
-                            onClick={() => handleNavigation('/register')}
-                            className="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-full font-bold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 cursor-pointer"
-                        >
-                            Get Started
-                        </button>
-                        <button
-                            onClick={() => handleNavigation('/profiles')}
-                            className="bg-white text-primary border-2 border-primary hover:bg-blue-50 px-8 py-3 rounded-full font-bold text-lg transition-all transform hover:-translate-y-1 cursor-pointer"
-                        >
-                            Explore
-                        </button>
                     </div>
                 </div>
-            </motion.section>
+            </section>
 
             {/* Statistics Section */}
             <motion.section
@@ -366,7 +419,7 @@ const Home = () => {
                                     <h3 className="text-2xl font-bold text-primary mb-2">{feature.title}</h3>
                                     <p className="text-text-secondary mb-4">{feature.description}</p>
                                     <span className="text-accent font-bold hover:text-accent-hover inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-                                        Learn more 
+                                        Learn more
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                         </svg>
@@ -460,7 +513,7 @@ const Home = () => {
                 </div>
             </motion.section>
 
-            
+
         </div>
     );
 };

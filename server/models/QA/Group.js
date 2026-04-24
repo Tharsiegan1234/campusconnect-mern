@@ -4,16 +4,7 @@ const groupSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        enum: [
-            "Programming",
-            "Web & Mobile",
-            "Database",
-            "Networking",
-            "Software Engineering",
-            "AI",
-            "Data Science",
-            "Cyber Security"
-        ]
+        unique: true
     },
 
     description: String,

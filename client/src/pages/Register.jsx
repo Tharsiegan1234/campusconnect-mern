@@ -34,8 +34,18 @@ const Register = () => {
         return () => clearInterval(interval);
     }, [timer]);
 
-    const onChange = (e) =>
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    const onChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'otp') {
+            const numericValue = value.replace(/[^0-9]/g, '');
+            setFormData({ ...formData, [name]: numericValue });
+        } else if (name === 'name') {
+            const lettersOnly = value.replace(/[^a-zA-Z\s]/g, '');
+            setFormData({ ...formData, [name]: lettersOnly });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
+    };
 
     const sendOTP = async () => {
         if (!email) {
@@ -81,6 +91,20 @@ const Register = () => {
     const onSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        // Full Name Validation
+        if (name.trim().length < 2) {
+            setError('Please enter a valid name');
+            return;
+        }
+
+        // Password Validation: min 6 chars, at least one letter and one number
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+        if (!passwordRegex.test(password)) {
+            setError('Password must be at least 6 characters and include both letters and numbers');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -209,6 +233,8 @@ const Register = () => {
                                             name="otp"
                                             value={otp}
                                             onChange={onChange}
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
                                             required
                                             className="w-full px-4 py-3 rounded-xl bg-bg-main border border-gray-200 focus:border-primary focus:ring-4 focus:ring-blue-50 outline-none transition-all text-center text-2xl font-bold tracking-widest"
                                             placeholder="••••••"

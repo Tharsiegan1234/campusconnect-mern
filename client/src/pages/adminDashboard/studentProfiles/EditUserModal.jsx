@@ -2,6 +2,56 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const FACULTIES = [
+    {
+        name: "Faculty of Computing",
+        departments: [
+            "Information Technology (IT)",
+            "Software Engineering (SE)",
+            "Computer Science (CS)",
+            "Cyber Security",
+            "Data Science",
+            "Interactive Media / Multimedia"
+        ]
+    },
+    {
+        name: "Faculty of Engineering",
+        departments: [
+            "Civil Engineering",
+            "Electrical & Electronic Engineering",
+            "Mechanical Engineering",
+            "Mechatronics Engineering"
+        ]
+    },
+    {
+        name: "Faculty of Business",
+        departments: [
+            "Business Management",
+            "Accounting & Finance",
+            "Marketing",
+            "Human Resource Management (HRM)",
+            "Logistics & Supply Chain Management"
+        ]
+    },
+    {
+        name: "Faculty of Hospitality & Culinary",
+        departments: [
+            "Hospitality Management",
+            "Tourism Management",
+            "Culinary Arts"
+        ]
+    },
+    {
+        name: "Faculty of Humanities & Sciences",
+        departments: [
+            "Psychology",
+            "Law",
+            "Biomedical Science",
+            "Nursing"
+        ]
+    }
+];
+
 const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
     const [formData, setFormData] = useState({
         name: '',
@@ -15,6 +65,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
 
     useEffect(() => {
         if (user) {
@@ -33,6 +84,16 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
+        // Special case for name field: block numbers and special characters
+        if (name === 'name') {
+            const lettersOnly = value.replace(/[^A-Za-z\s]/g, '');
+            if (value !== lettersOnly) {
+                setFieldErrors(prev => ({ ...prev, [name]: "Full Name can only contain letters and spaces" }));
+                return; // Block the update if it contains invalid characters
+            }
+        }
+
         if (name === 'year' || name === 'semester') {
             setFormData({
                 ...formData,
@@ -44,11 +105,41 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
         } else {
             setFormData({ ...formData, [name]: value });
         }
+
+        // Clear field error when user starts typing
+        if (fieldErrors[name]) {
+            setFieldErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        const nameRegex = /^[A-Za-z\s]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!nameRegex.test(formData.name)) {
+            errors.name = "Full Name can only contain letters and spaces";
+        }
+
+        if (formData.role === 'expert') {
+            if (!emailRegex.test(formData.realEmail)) {
+                errors.realEmail = "Invalid personal email format";
+            }
+        }
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setFieldErrors({});
+
+        if (!validateForm()) {
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -103,22 +194,42 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         required
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className="w-full px-5 py-3 rounded-2xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                                        className={`w-full px-5 py-3 rounded-2xl border ${fieldErrors.name ? 'border-red-500' : 'border-gray-200'} focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none`}
                                     />
+                                    {fieldErrors.name && <p className="text-red-500 text-[10px] mt-1 ml-1 font-bold">{fieldErrors.name}</p>}
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-bold text-text-secondary mb-1.5 ml-1">
                                         {formData.role === 'expert' ? 'Expertise Field' : 'Department/Field'}
                                     </label>
-                                    <input
-                                        type="text"
-                                        name="field"
-                                        required
-                                        value={formData.field}
-                                        onChange={handleChange}
-                                        className="w-full px-5 py-3 rounded-2xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                                    />
+                                    {formData.role === 'student' ? (
+                                        <select
+                                            name="field"
+                                            required
+                                            value={formData.field}
+                                            onChange={handleChange}
+                                            className="w-full px-5 py-3 rounded-2xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none bg-white font-medium"
+                                        >
+                                            <option value="">Select Department/Field</option>
+                                            {FACULTIES.map(faculty => (
+                                                <optgroup key={faculty.name} label={faculty.name}>
+                                                    {faculty.departments.map(dept => (
+                                                        <option key={dept} value={dept}>{dept}</option>
+                                                    ))}
+                                                </optgroup>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            name="field"
+                                            required
+                                            value={formData.field}
+                                            onChange={handleChange}
+                                            className="w-full px-5 py-3 rounded-2xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                                        />
+                                    )}
                                 </div>
 
                                 {formData.role === 'expert' && (
@@ -130,8 +241,9 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                             required
                                             value={formData.realEmail}
                                             onChange={handleChange}
-                                            className="w-full px-5 py-3 rounded-2xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                                            className={`w-full px-5 py-3 rounded-2xl border ${fieldErrors.realEmail ? 'border-red-500' : 'border-gray-200'} focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none`}
                                         />
+                                        {fieldErrors.realEmail && <p className="text-red-500 text-[10px] mt-1 ml-1 font-bold">{fieldErrors.realEmail}</p>}
                                     </div>
                                 )}
 

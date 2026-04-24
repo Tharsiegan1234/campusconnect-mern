@@ -13,11 +13,22 @@ const CreateWorkshopModal = ({ isOpen, onClose, onSuccess }) => {
     time: '',
     duration: 60,
     location: '',
-    capacity: 50
+    capacity: 50,
+    academicYear: 'Year 1 Sem 1',
+    faculty: 'Computing'
   });
   const [loading, setLoading] = useState(false);
 
   const categories = ['Technical', 'Soft Skills', 'Career Development', 'Research', 'Other'];
+  
+  const faculties = ['Computing', 'Engineering', 'Humanities and Sciences', 'Business', 'Architecture', 'Other'];
+  
+  const academicYears = [
+    'Year 1 Sem 1', 'Year 1 Sem 2',
+    'Year 2 Sem 1', 'Year 2 Sem 2',
+    'Year 3 Sem 1', 'Year 3 Sem 2',
+    'Year 4 Sem 1', 'Year 4 Sem 2'
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,11 +60,12 @@ const CreateWorkshopModal = ({ isOpen, onClose, onSuccess }) => {
         time: '',
         duration: 60,
         location: '',
-        capacity: 50
+        capacity: 50,
+        academicYear: 'Year 1 Sem 1',
+        faculty: 'Computing'
       });
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create workshop');
-      console.error('Create error:', error);
     } finally {
       setLoading(false);
     }
@@ -80,7 +92,7 @@ const CreateWorkshopModal = ({ isOpen, onClose, onSuccess }) => {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-text-secondary text-sm font-bold mb-2">Title</label>
+                <label className="block text-text-secondary text-sm font-bold mb-2">Title *</label>
                 <input
                   type="text"
                   name="title"
@@ -88,12 +100,11 @@ const CreateWorkshopModal = ({ isOpen, onClose, onSuccess }) => {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:outline-none"
-                  placeholder="e.g., Advanced JavaScript Workshop"
                 />
               </div>
 
               <div>
-                <label className="block text-text-secondary text-sm font-bold mb-2">Description</label>
+                <label className="block text-text-secondary text-sm font-bold mb-2">Description *</label>
                 <textarea
                   name="description"
                   value={formData.description}
@@ -101,7 +112,6 @@ const CreateWorkshopModal = ({ isOpen, onClose, onSuccess }) => {
                   required
                   rows={3}
                   className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:outline-none"
-                  placeholder="Describe what the workshop will cover..."
                 />
               </div>
 
@@ -119,9 +129,39 @@ const CreateWorkshopModal = ({ isOpen, onClose, onSuccess }) => {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-text-secondary text-sm font-bold mb-2">Faculty *</label>
+                <select
+                  name="faculty"
+                  value={formData.faculty}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:outline-none"
+                >
+                  {faculties.map(f => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-text-secondary text-sm font-bold mb-2">Academic Year *</label>
+                <select
+                  name="academicYear"
+                  value={formData.academicYear}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary focus:outline-none"
+                >
+                  {academicYears.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-text-secondary text-sm font-bold mb-2">Date</label>
+                  <label className="block text-text-secondary text-sm font-bold mb-2">Date *</label>
                   <input
                     type="date"
                     name="date"
@@ -133,7 +173,7 @@ const CreateWorkshopModal = ({ isOpen, onClose, onSuccess }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-text-secondary text-sm font-bold mb-2">Time</label>
+                  <label className="block text-text-secondary text-sm font-bold mb-2">Time *</label>
                   <input
                     type="time"
                     name="time"
@@ -160,7 +200,7 @@ const CreateWorkshopModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-text-secondary text-sm font-bold mb-2">Location/Meeting Link</label>
+                <label className="block text-text-secondary text-sm font-bold mb-2">Location/Meeting Link *</label>
                 <input
                   type="text"
                   name="location"
