@@ -306,7 +306,7 @@ const askConfirm = async (message) => window.confirm(message);
             openManage(managing);
         } catch (err) { showToast(err.message || 'Activate failed', 'error'); }
     };
-
+     //jghjghjgjg
     const handleBulkAction = async (action) => {
         if (!selectedIds.length) return;
         if (!confirm(`Confirm ${action} selected clubs?`)) return;
