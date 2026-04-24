@@ -7,6 +7,7 @@ import ProfileView from './pages/ProfileView';
 import QA from './pages/QA';
 import Skills from './pages/Skills';
 import StudyGroups from './pages/StudyGroups';
+import Workshops from './pages/Workshops/Workshops';
 import Clubs from './pages/Clubs';
 import Sports from './pages/Sports';
 import AdminDashboard from './pages/AdminDashboard';
@@ -54,6 +55,7 @@ function App() {
           <Route path="/qa" element={<QA />} />
           <Route path="/skills" element={<Skills />} />
           <Route path="/groups" element={<StudyGroups />} />
+          <Route path="/workshops" element={<Workshops />} />
           <Route path="/clubs" element={<Clubs />} />
           <Route path="/sports" element={<Sports />} />
         </Route>

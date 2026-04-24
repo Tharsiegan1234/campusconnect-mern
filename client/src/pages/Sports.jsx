@@ -75,29 +75,38 @@ const Sports = () => {
                 const res = await fetch('/api/sports');
                 if (!res.ok) throw new Error('no-sports-endpoint');
                 let data = await res.json();
-                
+
+                // Normalize response to an array in case the server returns { data, meta } or similar shapes
+                const normalizeArray = (d) => {
+                    if (Array.isArray(d)) return d;
+                    if (!d) return [];
+                    if (Array.isArray(d.data)) return d.data;
+                    if (Array.isArray(d.items)) return d.items;
+                    if (Array.isArray(d.results)) return d.results;
+                    return [];
+                };
+
                 // Initialize RSVP status and counts for each team
-                if (Array.isArray(data)) {
-                    data = data.map(t => {
-                        let _rsvpStatus = null;
-                        let _going = 0;
-                        let _notGoing = 0;
-                        
-                        if (t.nextSession && t.nextSession.rsvps) {
-                            _going = t.nextSession.rsvps.filter(r => r.status === 'going').length;
-                            _notGoing = t.nextSession.rsvps.filter(r => r.status === 'not_going').length;
-                            if (currentUser) {
-                                const myRsvp = t.nextSession.rsvps.find(r => 
-                                    (r.user && r.user._id === (currentUser._id || currentUser.id)) || 
-                                    (r.user === (currentUser._id || currentUser.id))
-                                );
-                                if (myRsvp) _rsvpStatus = myRsvp.status;
-                            }
+                data = normalizeArray(data).map(t => {
+                    let _rsvpStatus = null;
+                    let _going = 0;
+                    let _notGoing = 0;
+
+                    if (t.nextSession && t.nextSession.rsvps) {
+                        _going = t.nextSession.rsvps.filter(r => r.status === 'going').length;
+                        _notGoing = t.nextSession.rsvps.filter(r => r.status === 'not_going').length;
+                        if (currentUser) {
+                            const myRsvp = t.nextSession.rsvps.find(r =>
+                                (r.user && r.user._id === (currentUser._id || currentUser.id)) ||
+                                (r.user === (currentUser._id || currentUser.id))
+                            );
+                            if (myRsvp) _rsvpStatus = myRsvp.status;
                         }
-                        
-                        return { ...t, _rsvpStatus, _going, _notGoing };
-                    });
-                }
+                    }
+
+                    return { ...t, _rsvpStatus, _going, _notGoing };
+                });
+
                 setTeams(data);
             } catch (err) {
                 setTeams([
