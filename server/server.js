@@ -21,11 +21,12 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io Setup
+// Socket.io Setup - allow dynamic origins for local dev (Vite may pick varying ports)
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173", // Your frontend URL
-        methods: ["GET", "POST", "PUT", "DELETE"]
+        origin: (origin, callback) => callback(null, true),
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true
     }
 });
 
@@ -72,7 +73,8 @@ app.set('userSockets', userSockets);
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+// Allow CORS from any origin during local development. For production, restrict to known origins.
+app.use(cors({ origin: (origin, callback) => callback(null, true), credentials: true }));
 
 // Basic Route
 app.get('/', (req, res) => {

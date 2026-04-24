@@ -60,10 +60,14 @@ const Sports = () => {
                 const res = await fetch('/api/sports');
                 if (!res.ok) throw new Error('no-sports-endpoint');
                 let data = await res.json();
-                
+
+                // Support backend responses that return { data, meta } or an array
+                let items = [];
+                if (Array.isArray(data)) items = data;
+                else if (data && Array.isArray(data.data)) items = data.data;
+
                 // Initialize RSVP status and counts for each team
-                if (Array.isArray(data)) {
-                    data = data.map(t => {
+                items = items.map(t => {
                         let _rsvpStatus = null;
                         let _going = 0;
                         let _notGoing = 0;
@@ -82,8 +86,7 @@ const Sports = () => {
                         
                         return { ...t, _rsvpStatus, _going, _notGoing };
                     });
-                }
-                setTeams(data);
+                setTeams(items);
             } catch (err) {
                 setTeams([
                     { id: 1, name: 'Football Team', sportType: 'Football', description: 'Inter-college fixtures and training.' },
