@@ -62,14 +62,8 @@ function App() {
           <Route path="/profile/:id" element={<ProfileView />} />
           <Route path="/qa" element={<QA />} />
           <Route path="/skills" element={<Skills />} />
-<<<<<<< HEAD
-          <Route path="/skills/create" element={<CreateSkill />} />
-          <Route path="/skills/:id" element={<SkillDetails />} />
-          <Route path="/skills/edit/:id" element={<CreateSkill />} />
-=======
           <Route path="/create-skill" element={<CreateSkill />} />
           <Route path="/edit-skill/:id" element={<CreateSkill />} />
->>>>>>> 9b0a3de (feat: complete peer skill exchange and admin dashboard, security: untrack .env)
           <Route path="/groups" element={<StudyGroups />} />
           <Route path="/clubs" element={<Clubs />} />
           <Route path="/sports" element={<Sports />} />
